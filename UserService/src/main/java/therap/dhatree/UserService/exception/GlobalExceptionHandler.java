@@ -1,4 +1,4 @@
-package therap.dhatree.UserService.web;
+package therap.dhatree.UserService.exception;
 
 import java.util.Map;
 

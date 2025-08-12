@@ -15,13 +15,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import therap.dhatree.UserService.entity.Pregnant;
-import therap.dhatree.UserService.entity.User;
+import therap.dhatree.UserService.dto.AuthDtos;
+import therap.dhatree.UserService.model.Pregnant;
+import therap.dhatree.UserService.model.User;
 import therap.dhatree.UserService.repository.DoctorRepository;
 import therap.dhatree.UserService.repository.PartnerRepository;
 import therap.dhatree.UserService.repository.PregnantRepository;
 import therap.dhatree.UserService.repository.UserRepository;
-import therap.dhatree.UserService.web.dto.AuthDtos;
 
 public class AuthServiceTest {
 
@@ -41,7 +41,7 @@ public class AuthServiceTest {
         doctorRepository = mock(DoctorRepository.class);
         jwtService = mock(JwtService.class);
 
-        authService = new AuthService(userRepository, pregnantRepository, partnerRepository, jwtService);
+        authService = new AuthService(userRepository, pregnantRepository, partnerRepository, doctorRepository, jwtService);
     }
 
     @Test
@@ -89,5 +89,45 @@ public class AuthServiceTest {
         AuthService.BadRequestException ex = assertThrows(AuthService.BadRequestException.class, () -> authService.register(req));
         assertEquals("EMAIL_EXISTS", ex.getMessage());
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_doctor_success() {
+        AuthDtos.RegisterRequest req = new AuthDtos.RegisterRequest();
+        req.email = "doctor@hospital.com";
+        req.password = "SecurePass123!";
+        req.userType = "doctor";
+        req.profile = new AuthDtos.Profile();
+        req.profile.first_name = "Dr. Smith";
+        req.profile.last_name = "Johnson";
+
+        when(userRepository.existsByEmail("doctor@hospital.com")).thenReturn(false);
+        when(jwtService.generateAccessToken(any(), any(), any(), any(), anyLong())).thenReturn("jwt-token");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId(UUID.randomUUID());
+            return u;
+        });
+
+        // Mock the doctorRepository.save() method to return a Doctor object
+        when(doctorRepository.save(any())).thenAnswer(inv -> {
+            therap.dhatree.UserService.model.Doctor d = inv.getArgument(0);
+            d.setId(UUID.randomUUID());
+            return d;
+        });
+
+        AuthDtos.AuthResponse resp = authService.register(req);
+
+        assertNotNull(resp);
+        assertNotNull(resp.user);
+        assertEquals("doctor@hospital.com", resp.user.email);
+        assertEquals("doctor", resp.user.userType);
+        assertEquals("jwt-token", resp.accessToken);
+        assertEquals("jwt-token", resp.refreshToken);
+
+        // Verify that doctor repository is called for doctor registration
+        verify(doctorRepository, times(1)).save(any());
+        // Verify that pregnant repository is NOT called for doctor registration
+        verify(pregnantRepository, never()).save(any());
     }
 }

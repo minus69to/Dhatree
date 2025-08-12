@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import therap.dhatree.UserService.entity.Doctor;
+import therap.dhatree.UserService.model.Doctor;
 
 @Repository
 public interface DoctorRepository extends JpaRepository<Doctor, UUID> {

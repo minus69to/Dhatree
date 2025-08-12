@@ -1,4 +1,4 @@
-package therap.dhatree.UserService.entity;
+package therap.dhatree.UserService.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;

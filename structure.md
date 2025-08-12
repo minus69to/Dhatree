@@ -21,20 +21,20 @@ dhatree-pregnancy-tracker/
 │   │   │   │   │       │   ├── AuthController.java
 │   │   │   │   │       │   ├── UserController.java
 │   │   │   │   │       │   └── ProfileController.java
-│   │   │   │   │       ├── service/
+│   │   │   │   │       ├── service/ -
 │   │   │   │   │       │   ├── AuthService.java
 │   │   │   │   │       │   ├── UserService.java
 │   │   │   │   │       │   ├── TokenService.java
 │   │   │   │   │       │   └── ProfileService.java
-│   │   │   │   │       ├── repository/
+│   │   │   │   │       ├── repository/ -
 │   │   │   │   │       │   ├── UserRepository.java
 │   │   │   │   │       │   ├── TokenRepository.java
 │   │   │   │   │       │   └── ProfileRepository.java
-│   │   │   │   │       ├── model/
+│   │   │   │   │       ├── model/ -
 │   │   │   │   │       │   ├── User.java
 │   │   │   │   │       │   ├── UserProfile.java
 │   │   │   │   │       │   └── AuthToken.java
-│   │   │   │   │       ├── dto/
+│   │   │   │   │       ├── dto/ -
 │   │   │   │   │       │   ├── request/
 │   │   │   │   │       │   │   ├── LoginRequest.java
 │   │   │   │   │       │   │   ├── SignupRequest.java

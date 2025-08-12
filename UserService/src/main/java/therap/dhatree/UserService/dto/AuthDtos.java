@@ -1,4 +1,4 @@
-package therap.dhatree.UserService.web.dto;
+package therap.dhatree.UserService.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

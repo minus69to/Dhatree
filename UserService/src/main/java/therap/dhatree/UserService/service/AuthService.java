@@ -6,13 +6,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import therap.dhatree.UserService.entity.Partner;
-import therap.dhatree.UserService.entity.Pregnant;
-import therap.dhatree.UserService.entity.User;
+import therap.dhatree.UserService.dto.AuthDtos;
+import therap.dhatree.UserService.model.Doctor;
+import therap.dhatree.UserService.model.Partner;
+import therap.dhatree.UserService.model.Pregnant;
+import therap.dhatree.UserService.model.User;
+import therap.dhatree.UserService.repository.DoctorRepository;
 import therap.dhatree.UserService.repository.PartnerRepository;
 import therap.dhatree.UserService.repository.PregnantRepository;
 import therap.dhatree.UserService.repository.UserRepository;
-import therap.dhatree.UserService.web.dto.AuthDtos;
 
 @Service
 public class AuthService {
@@ -20,6 +22,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PregnantRepository pregnantRepository;
     private final PartnerRepository partnerRepository;
+    private final DoctorRepository doctorRepository;
     private final JwtService jwtService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -27,10 +30,12 @@ public class AuthService {
     public AuthService(UserRepository userRepository,
             PregnantRepository pregnantRepository,
             PartnerRepository partnerRepository,
+            DoctorRepository doctorRepository,
             JwtService jwtService) {
         this.userRepository = userRepository;
         this.pregnantRepository = pregnantRepository;
         this.partnerRepository = partnerRepository;
+        this.doctorRepository = doctorRepository;
         this.jwtService = jwtService;
     }
 
@@ -53,15 +58,29 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(req.password));
         user = userRepository.save(user);
 
-        switch (user.getUserType()) {
-            case "patient" ->
+        // Create profile based on user type
+        String userType = user.getUserType();
+        System.out.println("Creating profile for user type: '" + userType + "'");
+
+        try {
+            if ("patient".equals(userType)) {
+                System.out.println("Creating patient profile");
                 createPregnantProfile(user, req.profile);
-            case "partner" ->
+            } else if ("partner".equals(userType)) {
+                System.out.println("Creating partner profile");
                 createPartnerProfile(user, req.profile);
-            case "doctor" -> {
-                /* No profile row in SQL linked to users */ }
-            default ->
-                throw new BadRequestException("INVALID_USER_TYPE");
+            } else if ("doctor".equals(userType)) {
+                System.out.println("Creating doctor profile");
+                createDoctorProfile(user, req.profile);
+            } else {
+                System.err.println("Unknown user type: '" + userType + "'");
+                throw new BadRequestException("INVALID_USER_TYPE: " + userType);
+            }
+        } catch (Exception e) {
+            System.err.println("Error creating profile for user type: " + userType);
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            // Don't throw the error to avoid rolling back user creation
         }
 
         AuthDtos.UserView view = toView(user);
@@ -139,21 +158,24 @@ public class AuthService {
         if (!(t.equals("patient") || t.equals("partner") || t.equals("doctor") || t.equals("pregnant"))) {
             throw new BadRequestException("INVALID_USER_TYPE");
         }
-        if (!t.equals("doctor")) {
-            if (req.profile == null) {
-                throw new BadRequestException("INVALID_INPUT: profile");
+
+        // All user types require profile
+        if (req.profile == null) {
+            throw new BadRequestException("INVALID_INPUT: profile");
+        }
+
+        // All user types require first_name and last_name
+        if (req.profile.first_name == null || req.profile.first_name.trim().isEmpty()) {
+            throw new BadRequestException("INVALID_INPUT: first_name");
+        }
+
+        if (t.equals("patient") || t.equals("pregnant") || t.equals("doctor")) {
+            if (req.profile.last_name == null || req.profile.last_name.trim().isEmpty()) {
+                throw new BadRequestException("INVALID_INPUT: last_name");
             }
         }
-        if (t.equals("patient") || t.equals("pregnant")) {
-            if (req.profile.first_name == null || req.profile.first_name.trim().isEmpty()
-                    || req.profile.last_name == null || req.profile.last_name.trim().isEmpty()) {
-                throw new BadRequestException("INVALID_INPUT: first_name/last_name");
-            }
-        }
+
         if (t.equals("partner")) {
-            if (req.profile.first_name == null || req.profile.first_name.trim().isEmpty()) {
-                throw new BadRequestException("INVALID_INPUT: first_name");
-            }
             if (req.profile.partner_id == null || req.profile.partner_id.trim().isEmpty()) {
                 throw new BadRequestException("INVALID_INPUT: partner_id");
             }
@@ -192,6 +214,35 @@ public class AuthService {
                 .orElseThrow(() -> new NotFoundException("PARTNER_NOT_FOUND"));
         p.setPregnant(pregnant);
         partnerRepository.save(p);
+    }
+
+    private void createDoctorProfile(User user, AuthDtos.Profile profile) {
+        System.out.println("Creating doctor profile for user: " + user.getId());
+
+        Doctor d = new Doctor();
+        d.setUser(user);
+
+        // Set required fields from profile
+        d.setFirstName(profile.first_name);
+        d.setLastName(profile.last_name);
+
+        // Set optional fields if provided
+        if (profile.phone != null) {
+            d.setPhone(profile.phone);
+        }
+        if (profile.date_of_birth != null) {
+            d.setDateOfBirth(profile.date_of_birth);
+        }
+        if (profile.profile_image_url != null) {
+            d.setProfileImageUrl(profile.profile_image_url);
+        }
+        if (profile.address != null) {
+            d.setAddress(profile.address);
+        }
+
+        System.out.println("About to save doctor profile");
+        Doctor saved = doctorRepository.save(d);
+        System.out.println("Successfully created doctor profile with ID: " + saved.getId());
     }
 
     private AuthDtos.UserView toView(User u) {

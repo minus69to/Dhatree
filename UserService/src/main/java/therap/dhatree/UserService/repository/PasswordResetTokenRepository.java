@@ -5,8 +5,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import therap.dhatree.UserService.entity.PasswordResetToken;
-import therap.dhatree.UserService.entity.User;
+import therap.dhatree.UserService.model.PasswordResetToken;
+import therap.dhatree.UserService.model.User;
 
 import java.time.ZonedDateTime;
 import java.util.List;

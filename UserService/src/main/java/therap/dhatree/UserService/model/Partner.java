@@ -1,4 +1,4 @@
-package therap.dhatree.UserService.entity;
+package therap.dhatree.UserService.model;
 
 import java.time.LocalDate;
 import java.util.UUID;

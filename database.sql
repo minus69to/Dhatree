@@ -15,7 +15,7 @@ CREATE TABLE users (
 
 
 CREATE TABLE pregnents (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id),
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE pregnents (
 
 
 CREATE TABLE partner (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id),
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE doctors (
 
 
 CREATE TABLE password_reset_tokens (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id),
     token VARCHAR(255) UNIQUE NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -74,7 +74,7 @@ CREATE TABLE password_reset_tokens (
 
 
 CREATE TABLE pregnancies (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     pregnent_id UUID NOT NULL,
     last_menstrual_period DATE NOT NULL,
     due_date DATE NOT NULL,
@@ -95,7 +95,7 @@ CREATE TABLE pregnancies (
 
 
 CREATE TABLE weight_tracking (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     pregnancy_id UUID REFERENCES pregnancies(id),
     user_id UUID NOT NULL,
     recorded_date DATE NOT NULL,

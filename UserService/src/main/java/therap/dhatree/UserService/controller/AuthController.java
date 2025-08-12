@@ -1,4 +1,4 @@
-package therap.dhatree.UserService.web;
+package therap.dhatree.UserService.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import therap.dhatree.UserService.dto.AuthDtos;
 import therap.dhatree.UserService.service.AuthService;
-import therap.dhatree.UserService.web.dto.AuthDtos;
 
 @RestController
 @RequestMapping("/api/v1/auth")
