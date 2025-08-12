@@ -12,3 +12,21 @@ services:
       JWT_SECRET_BASE64: ${JWT_SECRET_BASE64}
     ports:
       - "${USERSERVICE_PORT}:8080"
+    networks:
+      - dhatree-network
+
+  frontend:
+    build:
+      context: ./FrontendService
+      dockerfile: Dockerfile
+    container_name: dhatree_frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - userservice
+    networks:
+      - dhatree-network
+
+networks:
+  dhatree-network:
+    driver: bridge

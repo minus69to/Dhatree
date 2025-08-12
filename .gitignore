@@ -22,6 +22,28 @@ mvnw.cmd
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Node.js / React Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.yarn-integrity
+package-lock.json
+yarn.lock
+
+# React build outputs
+build/
+dist/
+.next/
+out/
+
+# React development
+.cache/
+.parcel-cache/
+.eslintcache
+
 # IDE files
 .idea/
 *.iml
