@@ -34,6 +34,36 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(AuthService.UnauthorizedException.class)
+    public ResponseEntity<Map<String, Object>> handleUnauthorized(AuthService.UnauthorizedException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                "error", Map.of(
+                        "code", ex.getMessage() == null ? "UNAUTHORIZED" : ex.getMessage(),
+                        "message", ex.getMessage()
+                )
+        ));
+    }
+
+    @ExceptionHandler(AuthService.ForbiddenException.class)
+    public ResponseEntity<Map<String, Object>> handleForbidden(AuthService.ForbiddenException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                "error", Map.of(
+                        "code", ex.getMessage() == null ? "FORBIDDEN" : ex.getMessage(),
+                        "message", ex.getMessage()
+                )
+        ));
+    }
+
+    @ExceptionHandler(AuthService.AccountPendingException.class)
+    public ResponseEntity<Map<String, Object>> handleAccountPending(AuthService.AccountPendingException ex) {
+        return ResponseEntity.status(HttpStatus.LOCKED).body(Map.of(
+                "error", Map.of(
+                        "code", ex.getMessage() == null ? "ACCOUNT_PENDING" : ex.getMessage(),
+                        "message", ex.getMessage()
+                )
+        ));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleOther(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(

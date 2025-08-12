@@ -134,7 +134,7 @@ Errors
 
 ---
 
-## 2) Login (email + password)
+## 2) Login (email + password) // Done
 POST `/auth/login`
 
 Request

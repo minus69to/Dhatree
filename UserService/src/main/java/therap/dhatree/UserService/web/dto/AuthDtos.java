@@ -13,6 +13,17 @@ public class AuthDtos {
         public Profile profile;
     }
 
+    public static class LoginRequest {
+
+        public String email;
+        public String password;
+    }
+
+    public static class LogoutRequest {
+
+        public String refreshToken;
+    }
+
     public static class Profile {
 
         // patient (pregnents table)

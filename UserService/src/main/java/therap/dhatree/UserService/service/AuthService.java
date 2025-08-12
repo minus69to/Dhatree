@@ -49,7 +49,7 @@ public class AuthService {
         user.setAuthProvider("local");
         user.setEmailVerified(false);
         user.setIsActive(true);
-        user.setAccountStatus("pending");
+        user.setAccountStatus("active");
         user.setPasswordHash(passwordEncoder.encode(req.password));
         user = userRepository.save(user);
 
@@ -64,6 +64,43 @@ public class AuthService {
                 throw new BadRequestException("INVALID_USER_TYPE");
         }
 
+        AuthDtos.UserView view = toView(user);
+        AuthDtos.AuthResponse resp = new AuthDtos.AuthResponse();
+        resp.user = view;
+        resp.accessToken = jwtService.generateAccessToken(
+                user.getId().toString(), user.getEmail(), user.getUserType(), user.getAuthProvider(), 900);
+        resp.refreshToken = jwtService.generateAccessToken(
+                user.getId().toString(), user.getEmail(), user.getUserType(), user.getAuthProvider(), 604800);
+        return resp;
+    }
+
+    @Transactional
+    public AuthDtos.AuthResponse login(AuthDtos.LoginRequest req) {
+        validateLoginRequest(req);
+
+        String email = req.email.trim().toLowerCase();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException("INVALID_CREDENTIALS"));
+
+        // Verify password
+        if (!passwordEncoder.matches(req.password, user.getPasswordHash())) {
+            throw new UnauthorizedException("INVALID_CREDENTIALS");
+        }
+
+        // Check account status
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new ForbiddenException("ACCOUNT_SUSPENDED");
+        }
+
+        if ("pending".equals(user.getAccountStatus())) {
+            throw new AccountPendingException("ACCOUNT_PENDING");
+        }
+
+        // Update last login
+        user.setLastLogin(java.time.ZonedDateTime.now());
+        user = userRepository.save(user);
+
+        // Generate response
         AuthDtos.UserView view = toView(user);
         AuthDtos.AuthResponse resp = new AuthDtos.AuthResponse();
         resp.user = view;
@@ -170,6 +207,18 @@ public class AuthService {
         return v;
     }
 
+    private void validateLoginRequest(AuthDtos.LoginRequest req) {
+        if (req == null) {
+            throw new BadRequestException("INVALID_INPUT");
+        }
+        if (req.email == null || req.email.trim().isEmpty()) {
+            throw new BadRequestException("INVALID_INPUT: email");
+        }
+        if (req.password == null || req.password.trim().isEmpty()) {
+            throw new BadRequestException("INVALID_INPUT: password");
+        }
+    }
+
     public static class BadRequestException extends RuntimeException {
 
         public BadRequestException(String m) {
@@ -180,6 +229,78 @@ public class AuthService {
     public static class NotFoundException extends RuntimeException {
 
         public NotFoundException(String m) {
+            super(m);
+        }
+    }
+
+    public void logout(AuthDtos.LogoutRequest req) {
+        // Validate logout request
+        validateLogoutRequest(req);
+
+        // In a stateless JWT system, logout is handled client-side by removing the token
+        // For additional security, you could implement a token blacklist here
+        // For now, we'll just validate the token exists and is valid
+        UUID userId = extractUserIdFromToken(req.refreshToken);
+        if (userId == null) {
+            throw new UnauthorizedException("Invalid refresh token");
+        }
+    }
+
+    public AuthDtos.UserView getCurrentUser(String authorizationHeader) {
+        // Extract token from Authorization header
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new UnauthorizedException("Authorization header missing or invalid");
+        }
+
+        String token = authorizationHeader.substring(7); // Remove "Bearer " prefix
+        UUID userId = extractUserIdFromToken(token);
+
+        if (userId == null) {
+            throw new UnauthorizedException("Invalid access token");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+
+        return toView(user);
+    }
+
+    private void validateLogoutRequest(AuthDtos.LogoutRequest req) {
+        if (req == null) {
+            throw new IllegalArgumentException("Logout request cannot be null");
+        }
+        if (req.refreshToken == null || req.refreshToken.trim().isEmpty()) {
+            throw new IllegalArgumentException("Refresh token is required");
+        }
+    }
+
+    private UUID extractUserIdFromToken(String token) {
+        try {
+            // Use JwtService to extract user ID from token
+            String userIdStr = jwtService.extractSubject(token);
+            return UUID.fromString(userIdStr);
+        } catch (Exception e) {
+            return null; // Invalid token
+        }
+    }
+
+    public static class UnauthorizedException extends RuntimeException {
+
+        public UnauthorizedException(String m) {
+            super(m);
+        }
+    }
+
+    public static class ForbiddenException extends RuntimeException {
+
+        public ForbiddenException(String m) {
+            super(m);
+        }
+    }
+
+    public static class AccountPendingException extends RuntimeException {
+
+        public AccountPendingException(String m) {
             super(m);
         }
     }
